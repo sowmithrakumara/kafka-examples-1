@@ -21,7 +21,7 @@ public class EventGenerator {
         event.setReferrer("www.example.com");
         event.setTimestamp(runtime);
         event.setUrl(websites[r.nextInt(websites.length)]);
-        event.setUseragent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36");
+        event.setUseragent("Mozilla/5.0");
         currUser += 1;
         return event;
     }
