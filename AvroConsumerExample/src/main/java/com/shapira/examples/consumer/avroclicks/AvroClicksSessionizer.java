@@ -5,6 +5,7 @@ import JavaSessionize.avro.LogLine;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.errors.SerializationException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 public class AvroClicksSessionizer {
+    public static final String AVRO_CLICKS_SESSIONIZER = "AvroClicksSessionizer";
     private final KafkaConsumer<String, LogLine> consumer;
     private final KafkaProducer<String, LogLine> producer;
     private final String inputTopic;
@@ -23,11 +25,11 @@ public class AvroClicksSessionizer {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
 
         // currently hardcoding a lot of parameters, for simplicity
-        String groupId = "AvroClicksSessionizer";
+        String groupId = AVRO_CLICKS_SESSIONIZER;
         String inputTopic = "clicks";
         String outputTopic = "sessionized_clicks";
-        String url = "http://localhost:8081";
-        String brokers = "localhost:9092";
+        String url = "http://clm-pun-tsiuit:8081";
+        String brokers = "clm-pun-tsiuit:9092,clm-pun-tsiunt:9092,clm-pun-tsiumv:9092";
 
         AvroClicksSessionizer sessionizer = new AvroClicksSessionizer(brokers, groupId, inputTopic, outputTopic, url);
         sessionizer.run();
@@ -50,8 +52,8 @@ public class AvroClicksSessionizer {
         props.put("bootstrap.servers", brokers);
         props.put("group.id", groupId);
         props.put("auto.commit.enable", "false");
-        props.put("auto.offset.reset", "earliest");
-        props.put("schema.registry.url", url);
+        props.put("auto.offset.reset", "latest");
+        props.put("schema.registry.url", "http://clm-pun-tsiuit:8081");
         props.put("specific.avro.reader", true);
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "io.confluent.kafka.serializers.KafkaAvroDeserializer");
@@ -65,8 +67,13 @@ public class AvroClicksSessionizer {
         System.out.println("Reading topic:" + inputTopic);
 
         while (true) {
-            ConsumerRecords<String, LogLine> records = consumer.poll(1000);
-
+            ConsumerRecords<String, LogLine> records;
+            /*try {
+                records = consumer.poll(1000);
+            } catch (SerializationException e) {
+                continue;
+            }*/
+            records = consumer.poll(1000);
 
             for (ConsumerRecord<String, LogLine> record: records) {
                 String ip = record.key();
@@ -98,7 +105,7 @@ public class AvroClicksSessionizer {
     private KafkaProducer<String, LogLine> getProducer(String topic, String url) {
         Properties props = new Properties();
         // hardcoding the Kafka server URI for this example
-        props.put("bootstrap.servers", "localhost:9092");
+        props.put("bootstrap.servers", "clm-pun-tsiuit:9092,clm-pun-tsiunt:9092,clm-pun-tsiumv:9092");
         props.put("acks", "all");
         props.put("retries", 0);
         props.put("key.serializer", "io.confluent.kafka.serializers.KafkaAvroSerializer");
